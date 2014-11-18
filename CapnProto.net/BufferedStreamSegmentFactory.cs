@@ -28,11 +28,11 @@ namespace CapnProto
     class BufferedStreamSegmentFactoryBuilder
     {
         private readonly IGCWrapper gc;
-        private Cache<BufferedStreamSegmentFactory> cache;
+        private ScopedCache<BufferedStreamSegmentFactory> cache;
         public BufferedStreamSegmentFactoryBuilder(IGCWrapper gc)
         {
             this.gc = gc;
-            cache = new Cache<BufferedStreamSegmentFactory>(gc); 
+            cache = new ScopedCache<BufferedStreamSegmentFactory>(gc); 
         }
         public BufferedStreamSegmentFactory Create(Stream source, long length, bool leaveOpen)
         {

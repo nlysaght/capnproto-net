@@ -4,10 +4,51 @@ using System.Collections.Generic;
 using System.IO;
 namespace CapnProto
 {
+    /// <summary>
+    /// Separate loader interface so can test/mock message loading
+    /// </summary>
+    public interface IMessageLoader
+    {
+        Message Load(Stream source, int length = -1, bool leaveOpen = false);
+        Message Load(byte[] buffer, int offset = 0, int length = -1);
+        Message Load(ISegmentFactory segmentFactory);
+    }
+
+    /// <summary>
+    /// Implementation of a loader pattern.
+    /// </summary>
+    internal class MessageLoader : IMessageLoader
+    {
+        private BufferedStreamSegmentFactoryBuilder segmentFactoryBuilder {get; set;}
+        /// <summary>
+        /// Message loader which manages loading messages from various sources.
+        /// </summary>
+        /// <param name="segmentFactoryBuilder"></param>
+        public MessageLoader(BufferedStreamSegmentFactoryBuilder segmentFactoryBuilder)
+        {
+            this.segmentFactoryBuilder = segmentFactoryBuilder;
+        }
+        public Message Load(Stream source, int length = -1, bool leaveOpen = false)
+        {
+            var segmentFactory = segmentFactoryBuilder.Create(source, length, leaveOpen);
+            return Load(segmentFactory);
+        }
+        public Message Load(byte[] buffer, int offset = 0, int length = -1)
+        {
+            return Load(BufferSegmentFactory.Create(buffer, offset, length));
+        }
+        public Message Load(ISegmentFactory segmentFactory)
+        {
+            var msg = Cache<Message>.Pop() ?? new Message();
+            msg.Init(segmentFactory);
+            return msg;
+        }
+    }
+
     public sealed class Message : IDisposable, IRecyclable, ISegment, IEnumerable<ISegment>
     {
         public const int WordLength = 8;
-        private Message() { }
+        internal Message() { }
 
         public static Message Load(byte[] buffer, int offset = 0, int length = -1)
         {
@@ -134,7 +175,7 @@ namespace CapnProto
         /// </summary>
         public bool AutoDereference { get; set; }
 
-        private void Init(ISegmentFactory segmentFactory)
+        internal void Init(ISegmentFactory segmentFactory)
         {
             SegmentCount = 0;
             AutoDereference = true;
