@@ -31,18 +31,18 @@ namespace UnitTest_CnPnet
         internal class TestFactory
         {
             public Mock<IGCWrapper> GCMock { get; private set; }
-            public Cacher<IRecyclable> Cacher { get; private set; }
+            public ScopedCache<IRecyclable> Cacher { get; private set; }
             public TestFactory()
             {
                 GCMock = new Mock<IGCWrapper>(MockBehavior.Loose);
-                Cacher = new Cacher<IRecyclable>(GCMock.Object);
+                Cacher = new ScopedCache<IRecyclable>(GCMock.Object);
             }
         }
         
         [Test]
         public void Construction_With_Null_GC_Fails()
         {
-            Assert.Throws<ArgumentNullException> (() => {var cache = new Cacher<FakeRecycable>(null);});
+            Assert.Throws<ArgumentNullException>(() => { var cache = new ScopedCache<FakeRecycable>(null); });
         }
         [Test]
         public void Construction_With_GC_IsSuccess()

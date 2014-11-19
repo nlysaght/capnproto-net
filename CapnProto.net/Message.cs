@@ -58,7 +58,8 @@ namespace CapnProto
 
         public static Message Load(Stream source, int length = -1, bool leaveOpen = false)
         {
-            return Load(BufferedStreamSegmentFactory.Create(source, length, leaveOpen));
+            throw new NotImplementedException();
+            //return Load(BufferedStreamSegmentFactory.Create(source, length, leaveOpen));
         }
 #if FULLCLR
         public static Message Load(string path)
