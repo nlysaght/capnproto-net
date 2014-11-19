@@ -92,8 +92,8 @@ namespace CapnProto
     /// <typeparam name="T"></typeparam>
     public abstract class SingletonInstance<T> where T: class
     {
-        private static T singleInstance = null;
-        private static object syncRoot = new Object();
+        private static SingletonInstance<T> singleInstance = null;
+        private static readonly object syncRoot = new Object();
         public SingletonInstance()
         {
             if (singleInstance == null)
@@ -104,7 +104,7 @@ namespace CapnProto
                     {
                         throw new SingleInstanceOnlyException<UnManagedBufferProvider>();
                     }
-                    singleInstance = this as T;
+                    singleInstance = this;
                 }
             }
             else
@@ -148,7 +148,6 @@ namespace CapnProto
         Stream source;
         long lastWord, remainingWords;
         bool leaveOpen;
-        readonly byte[] scratch = new byte[8];
         readonly Action<BufferedStreamSegmentFactory> disposeAction;
 //Depending on implementation required define the buffer provider.
 #if UNMANAGED
@@ -201,6 +200,7 @@ namespace CapnProto
                 value = 0;
                 return false;
             }
+            byte[] scratch = new byte[8];
             if(!Read(source, scratch, 8))
             {
                 value = 0;
