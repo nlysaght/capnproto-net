@@ -87,7 +87,7 @@ namespace CapnProto
     }
 
     /// <summary>
-    /// Demand a single instance of a class exists.
+    /// Demand that only a single instance of a class exists.
     /// </summary>
     /// <typeparam name="T"></typeparam>
     public abstract class SingletonInstance<T> where T: class
