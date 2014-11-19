@@ -12,7 +12,7 @@ namespace CapnProto.Base
     /// <typeparam name="T"></typeparam>
     public abstract class SingletonInstance<T> where T : class
     {
-        private static SingletonInstance<T> singleInstance = null;
+        private static T singleInstance = null;
         private static readonly object syncRoot = new Object();
         public SingletonInstance()
         {
@@ -24,7 +24,7 @@ namespace CapnProto.Base
                     {
                         throw new SingleInstanceOnlyException<T>();
                     }
-                    singleInstance = this;
+                    singleInstance = this as T;
                 }
             }
             else
@@ -32,6 +32,7 @@ namespace CapnProto.Base
                 throw new SingleInstanceOnlyException<T>();
             }
         }
+        public static T Instance { get { return singleInstance; } }
     }
 
     public class SingleInstanceOnlyException<T> : Exception

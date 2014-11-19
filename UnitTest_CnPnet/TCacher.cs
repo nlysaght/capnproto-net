@@ -28,11 +28,11 @@ namespace UnitTest_CnPnet
     [TestFixture]
     public class TCacher
     {
-        internal class TestFactory
+        internal class TestHolder
         {
             public Mock<IGCWrapper> GCMock { get; private set; }
             public ScopedCache<IRecyclable> Cacher { get; private set; }
-            public TestFactory()
+            public TestHolder()
             {
                 GCMock = new Mock<IGCWrapper>(MockBehavior.Loose);
                 Cacher = new ScopedCache<IRecyclable>(GCMock.Object);
@@ -47,13 +47,13 @@ namespace UnitTest_CnPnet
         [Test]
         public void Construction_With_GC_IsSuccess()
         {
-            var factory = new TestFactory();
+            var factory = new TestHolder();
             Assert.IsNotNull(factory.Cacher.GC);
         }
         [Test]
         public void Pushing_A_Null_Has_No_Effect()
         {
-            var factory = new TestFactory();
+            var factory = new TestHolder();
             factory.Cacher.Push(null);
             factory.GCMock.Verify(m => m.SuppressFinalize(It.IsAny<FakeRecycable>()), Times.Never());
             factory.GCMock.Verify(m => m.ReRegisterForFinalize(It.IsAny<FakeRecycable>()), Times.Never());
@@ -61,7 +61,7 @@ namespace UnitTest_CnPnet
         [Test]
         public void Pushing_A_Recyclable_Calls_Expected_Methods()
         {
-            var factory = new TestFactory();
+            var factory = new TestHolder();
             var recycable = new Mock<IRecyclable>();
             factory.Cacher.Push(recycable.Object);
             factory.GCMock.Verify(m => m.SuppressFinalize(It.IsAny<IRecyclable>()), Times.Once());
@@ -70,7 +70,7 @@ namespace UnitTest_CnPnet
         [Test]
         public void Pushing_An_Existing_Recyclable_Calls_Expected_Methods()
         {
-            var factory = new TestFactory();
+            var factory = new TestHolder();
             var recycableOne = new Mock<IRecyclable>();
             var recycableTwo = new Mock<IRecyclable>();
             factory.Cacher.Push(recycableOne.Object);
@@ -81,7 +81,7 @@ namespace UnitTest_CnPnet
         [Test]
         public void Poping_A_Recyclable_Calls_Expected_Methods()
         {
-            var factory = new TestFactory();
+            var factory = new TestHolder();
             var recycable = new Mock<IRecyclable>();
             factory.Cacher.Push(recycable.Object);
             var result = factory.Cacher.Pop();

@@ -24,6 +24,8 @@ namespace UnitTest_CnPnet
         {
             var instance = new SingletonTestOne();
             Assert.IsNotNull(instance);
+            Assert.IsNotNull(SingletonTestOne.Instance);
+            Assert.That(instance, Is.SameAs(SingletonTestOne.Instance));
         }
         [Test]
         public void Not_Allowed_To_Create_Multiple_Instances()

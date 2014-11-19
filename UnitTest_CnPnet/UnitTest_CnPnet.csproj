@@ -68,6 +68,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Base\BasicTestFixture.cs" />
+    <Compile Include="TBufferedStreamSegmentFactory.cs" />
     <Compile Include="TCacher.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="TBufferProviders.cs" />

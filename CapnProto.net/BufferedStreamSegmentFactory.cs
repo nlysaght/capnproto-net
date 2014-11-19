@@ -33,13 +33,16 @@ namespace CapnProto
     {
         BufferedStreamSegmentFactory Create(Stream source, long length, bool leaveOpen);
     }
-    class BufferedStreamSegmentFactoryBuilder : IBufferedStreamSegmentFactoryBuilder
+    class BufferedStreamSegmentFactoryBuilder 
+        : 
+#if PRODUCTION
+ SingletonInstance<BufferedStreamSegmentFactoryBuilder>,  
+#endif
+        IBufferedStreamSegmentFactoryBuilder
     {
-        private readonly IGCWrapper gc;
         private ScopedCache<BufferedStreamSegmentFactory> cache;
         public BufferedStreamSegmentFactoryBuilder(IGCWrapper gc)
         {
-            this.gc = gc;
             cache = new ScopedCache<BufferedStreamSegmentFactory>(gc); 
         }
         /// <summary>
@@ -59,7 +62,9 @@ namespace CapnProto
         }
     }
 
-
+    /// <summary>
+    /// Instance of this class should always be creating using the BufferedStreamSegmentFactoryBuilder
+    /// </summary>
     class BufferedStreamSegmentFactory : SegmentFactory
     {
         Stream source;
