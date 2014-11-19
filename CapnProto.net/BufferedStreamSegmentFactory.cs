@@ -102,14 +102,14 @@ namespace CapnProto
                 {
                     if (singleInstance != null)
                     {
-                        throw new SingleInstanceOnlyException<UnManagedBufferProvider>();
+                        throw new SingleInstanceOnlyException<T>();
                     }
                     singleInstance = this;
                 }
             }
             else
             {
-                throw new SingleInstanceOnlyException<UnManagedBufferProvider>();
+                throw new SingleInstanceOnlyException<T>();
             }
         }
     }
