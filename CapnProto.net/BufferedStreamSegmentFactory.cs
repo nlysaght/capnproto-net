@@ -2,6 +2,8 @@
 #define UNMANAGED
 #endif
 
+using CapnProto.Base;
+using CapnProto.Providers;
 using CapnProto.Wrappers;
 using System;
 using System.Collections.Generic;
@@ -15,6 +17,8 @@ using System.Threading.Tasks;
 namespace CapnProto
 {
     
+
+
     /// <summary>
     /// Need a separate builder/factory for creating a buffer segment factory. 
     /// NOTE:: In reality see these being created from an IOC like TinyIOC....
@@ -25,7 +29,11 @@ namespace CapnProto
     /// behavior. Means during disposal we can put in additional behaviors for things like Caching, again for testing reasons and also for single responsibility principals.
     /// We can now inject the GC wrapper for testing.
     /// </remarks>
-    class BufferedStreamSegmentFactoryBuilder
+    internal interface IBufferedStreamSegmentFactoryBuilder
+    {
+        BufferedStreamSegmentFactory Create(Stream source, long length, bool leaveOpen);
+    }
+    class BufferedStreamSegmentFactoryBuilder : IBufferedStreamSegmentFactoryBuilder
     {
         private readonly IGCWrapper gc;
         private ScopedCache<BufferedStreamSegmentFactory> cache;
@@ -33,12 +41,6 @@ namespace CapnProto
         {
             this.gc = gc;
             cache = new ScopedCache<BufferedStreamSegmentFactory>(gc); 
-        }
-        public BufferedStreamSegmentFactory Create(Stream source, long length, bool leaveOpen)
-        {
-            var obj = cache.Pop() ?? new BufferedStreamSegmentFactory(DisposeAction, source, length, leaveOpen);
-            obj.Init(source, length, leaveOpen);
-            return obj;
         }
         /// <summary>
         /// Manage caching internally in this class for the moment. Keeps the BufferedStreamSegmentFactory clean and testable.
@@ -48,100 +50,15 @@ namespace CapnProto
         {
             cache.Push(instance);
         }
-    }
 
-    /// <summary>
-    /// Define a buffer accessor which is required for managed and unmanaged access in the BufferedStreamSegmentFactory.
-    /// </summary>
-    public interface IBufferProvider
-    {
-        byte[] Buffer { get; }
-    }
-    /// <summary>
-    /// The unmanaged provider also needs additional functionality for its behavior.
-    /// </summary>
-    public interface IUnmanagedBufferProvider : IBufferProvider
-    {
-        byte[] PopBuffer();
-        void PushBuffer(byte[] buffer);
-    }
-
-    /// <summary>
-    /// Implementation of the managed buffer provider 
-    /// </summary>
-    internal class ManagedBufferProvider : IBufferProvider
-    {
-        public ManagedBufferProvider(int bufferSize)
+        BufferedStreamSegmentFactory IBufferedStreamSegmentFactoryBuilder.Create(Stream source, long length, bool leaveOpen)
         {
-            Buffer = new byte[bufferSize];
-        }
-        public byte[] Buffer {get; private set;}
-    }
-
-    public class SingleInstanceOnlyException<T> : Exception
-    {
-        public SingleInstanceOnlyException()
-            : base(string.Format("You are only allowed a single instance of this class {0}", typeof(T).FullName))
-        {
+            var obj = cache.Pop() ?? new BufferedStreamSegmentFactory(DisposeAction, source, length, leaveOpen);
+            obj.Init(source, length, leaveOpen);
+            return obj;
         }
     }
 
-    /// <summary>
-    /// Demand that only a single instance of a class exists.
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    public abstract class SingletonInstance<T> where T: class
-    {
-        private static SingletonInstance<T> singleInstance = null;
-        private static readonly object syncRoot = new Object();
-        public SingletonInstance()
-        {
-            if (singleInstance == null)
-            {
-                lock (syncRoot)
-                {
-                    if (singleInstance != null)
-                    {
-                        throw new SingleInstanceOnlyException<T>();
-                    }
-                    singleInstance = this;
-                }
-            }
-            else
-            {
-                throw new SingleInstanceOnlyException<T>();
-            }
-        }
-    }
-
-    /// <summary>
-    /// Moved the implementation of the Unmanaged static buffer to this implementation.
-    /// </summary>
-    /// <remarks>
-    /// Remove some convoluted code from the BufferedStreamSegmentFactory and allows us to easily change the
-    /// buffering mechanism.
-    /// CLARIFY:: Basically this class as a singleton would remove the static decoration from it
-    /// and everything would work as it currently does in static mode.
-    /// </remarks>
-    internal class UnManagedBufferProvider 
-        : SingletonInstance<UnManagedBufferProvider>, IUnmanagedBufferProvider
-    {
-        private byte[] sharedBuffer;
-
-        public UnManagedBufferProvider(int messageWordLength)
-        {
-            Buffer = sharedBuffer;
-        }
-        public byte[] Buffer { get; private set; }
-        public byte[] PopBuffer()
-        {
-            return Interlocked.Exchange(ref sharedBuffer, null) ?? new byte[1024 * Message.WordLength];
-        }
-        public void PushBuffer(byte[] buffer)
-        {
-            if (buffer != null) Interlocked.Exchange(ref sharedBuffer, buffer);
-        }
-    }
 
     class BufferedStreamSegmentFactory : SegmentFactory
     {
@@ -158,6 +75,11 @@ namespace CapnProto
 
         public BufferedStreamSegmentFactory(Action<BufferedStreamSegmentFactory> disposeAction, Stream source, long length, bool leaveOpen)
         {
+            if (disposeAction == null)
+                throw new ArgumentNullException("disposeAction");
+            if (source == null)
+                throw new ArgumentNullException("source");
+            // TODO:: Do we need length validation here. I suppose this is stream length validation which should never be < 0.
             this.disposeAction = disposeAction;
             Init(source, length, leaveOpen);
         }
@@ -171,7 +93,14 @@ namespace CapnProto
         {
             if(source != null && !leaveOpen)
             {
-                try { source.Dispose(); } catch { }
+                try 
+                { 
+                    source.Dispose(); 
+                } 
+                catch 
+                { 
+                    //TODO:: Clarify do we really want a silent exception here?
+                }
             }
             source = null;
             lastWord = remainingWords = 0;
@@ -241,7 +170,7 @@ namespace CapnProto
             }
 
 #if UNMANAGED
-            bufferProvider = new UnManagedBufferProvider(Message.WordLength);
+            bufferProvider = new UnmanagedBufferProvider(Message.WordLength);
             var ptr = default(IntPtr);
             byte[] buffer = null;
             try {

@@ -60,6 +60,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Base\SingletonInstance.cs" />
     <Compile Include="BufferedStreamSegmentFactory.cs" />
     <Compile Include="BufferPointerSegment.cs" />
     <Compile Include="BufferSegment.cs" />
@@ -69,6 +70,7 @@
     <Compile Include="MemoryMappedFileSegmentFactory.cs" />
     <Compile Include="Pointers.cs" />
     <Compile Include="PointerSegment.cs" />
+    <Compile Include="Providers\BufferProviders.cs" />
     <Compile Include="SegmentFactory.cs" />
     <Compile Include="StructAttribute.cs" />
     <Compile Include="BufferSegmentFactory.cs" />

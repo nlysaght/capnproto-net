@@ -19,12 +19,12 @@ namespace CapnProto
     /// </summary>
     internal class MessageLoader : IMessageLoader
     {
-        private BufferedStreamSegmentFactoryBuilder segmentFactoryBuilder {get; set;}
+        private IBufferedStreamSegmentFactoryBuilder segmentFactoryBuilder { get; set; }
         /// <summary>
         /// Message loader which manages loading messages from various sources.
         /// </summary>
         /// <param name="segmentFactoryBuilder"></param>
-        public MessageLoader(BufferedStreamSegmentFactoryBuilder segmentFactoryBuilder)
+        public MessageLoader(IBufferedStreamSegmentFactoryBuilder segmentFactoryBuilder)
         {
             this.segmentFactoryBuilder = segmentFactoryBuilder;
         }
