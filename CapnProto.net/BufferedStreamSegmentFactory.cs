@@ -78,17 +78,56 @@ namespace CapnProto
         public byte[] Buffer {get; private set;}
     }
 
+    public class SingleInstanceOnlyException<T> : Exception
+    {
+        public SingleInstanceOnlyException()
+            : base(string.Format("You are only allowed a single instance of this class {0}", typeof(T).FullName))
+        {
+        }
+    }
+
+    /// <summary>
+    /// Demand a single instance of a class exists.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    public abstract class SingletonInstance<T> where T: class
+    {
+        private static T singleInstance = null;
+        private static object syncRoot = new Object();
+        public SingletonInstance()
+        {
+            if (singleInstance == null)
+            {
+                lock (syncRoot)
+                {
+                    if (singleInstance != null)
+                    {
+                        throw new SingleInstanceOnlyException<UnManagedBufferProvider>();
+                    }
+                    singleInstance = this as T;
+                }
+            }
+            else
+            {
+                throw new SingleInstanceOnlyException<UnManagedBufferProvider>();
+            }
+        }
+    }
+
     /// <summary>
     /// Moved the implementation of the Unmanaged static buffer to this implementation.
     /// </summary>
     /// <remarks>
     /// Remove some convoluted code from the BufferedStreamSegmentFactory and allows us to easily change the
     /// buffering mechanism.
+    /// CLARIFY:: Basically this class as a singleton would remove the static decoration from it
+    /// and everything would work as it currently does in static mode.
     /// </remarks>
-    internal class UnManagedBufferProvider : IUnmanagedBufferProvider
+    internal class UnManagedBufferProvider 
+        : SingletonInstance<UnManagedBufferProvider>, IUnmanagedBufferProvider
     {
-        //TODO:: Clarify with Marc if those should be ThreadStatic
-        private static byte[] sharedBuffer;
+        private byte[] sharedBuffer;
+
         public UnManagedBufferProvider(int messageWordLength)
         {
             Buffer = sharedBuffer;
